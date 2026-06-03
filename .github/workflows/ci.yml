@@ -1,0 +1,60 @@
+name: PesaText CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test-contract:
+    name: Test Soroban Contract
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: wasm32-unknown-unknown
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SMS-DeFi-Assistant---PesaText/contract -> target"
+
+      - name: Build Contract
+        run: |
+          cd SMS-DeFi-Assistant---PesaText/contract
+          cargo build --target wasm32-unknown-unknown --release
+
+      - name: Run Contract Tests
+        run: |
+          cd SMS-DeFi-Assistant---PesaText/contract
+          cargo test
+
+  test-backend:
+    name: Test Actix Web Backend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "SMS-DeFi-Assistant---PesaText/backend -> target"
+
+      - name: Build Backend
+        run: |
+          cd SMS-DeFi-Assistant---PesaText/backend
+          cargo build
+
+      - name: Run Backend Tests
+        run: |
+          cd SMS-DeFi-Assistant---PesaText/backend
+          cargo test

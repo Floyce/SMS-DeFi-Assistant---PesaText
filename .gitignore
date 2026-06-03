@@ -1,0 +1,28 @@
+# Node / React Frontend
+admin-dashboard/node_modules/
+admin-dashboard/dist/
+admin-dashboard/dist-ssr/
+admin-dashboard/*.local
+admin-dashboard/.eslintcache
+
+# Rust Backend and Contract
+target/
+**/*.rs.bk
+Cargo.lock
+
+# Logs and environment
+*.log
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Database files
+*.db
+*.db-journal
+*.db-wal
+
+# OS files
+.DS_Store
+Thumbs.db
