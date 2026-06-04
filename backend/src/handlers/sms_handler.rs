@@ -3,7 +3,7 @@
 //! Description: Handle Twilio SMS webhooks and execute commands
 //! Author: Floyce
 //! Created: 2026-06-03
-//! Last Modified: 2026-06-03
+//! Last Modified: 2026-06-04
 
 use actix_web::{web, HttpResponse, Responder};
 use crate::db::DbPool;
@@ -41,17 +41,14 @@ pub async fn handle_sms(
 
     let reply_msg = match parsed_cmd {
         SmsCommand::Register(name) => {
-            // Check if user already exists in DB
             match user_repo::get_user(pool.get_ref(), &formatted_phone).await {
                 Ok(Some(_)) => "PesaText: You are already registered under this phone number.".to_string(),
                 Ok(None) => {
-                    // Call smart contract
                     match stellar_client.register(&formatted_phone, &name).await {
                         Ok(res) => {
-                            // Generate mock Stellar public key for DB
                             let stellar_address = format!(
                                 "G{}",
-                                &res.tx_hash[0..min(55, res.tx_hash.len())].to_uppercase()
+                                &res.tx_hash[0..std::cmp::min(55, res.tx_hash.len())].to_uppercase()
                             );
                             
                             let new_user = User {
@@ -76,8 +73,8 @@ pub async fn handle_sms(
                             let _ = deposit_repo::create_transaction(pool.get_ref(), &tx).await;
 
                             format!(
-                                "PesaText: Registration successful! Welcome, {}. Your Stellar wallet has been created (Address: {}). Send HELP to see options.",
-                                name, stellar_address
+                                "PesaText: Registration successful! Welcome, {}. Your Stellar wallet has been created. Send HELP to see options.",
+                                name
                             )
                         }
                         Err(e) => format!("PesaText: Blockchain registration failed ({}).", e),
@@ -96,7 +93,6 @@ pub async fn handle_sms(
                         (Ok(bal_stroops), Ok(loan_stroops)) => {
                             let bal_xlm = currency_converter::stroops_to_xlm(bal_stroops);
                             let loan_xlm = currency_converter::stroops_to_xlm(loan_stroops);
-
                             let bal_kes = currency_converter::xlm_to_kes(bal_xlm);
                             let loan_kes = currency_converter::xlm_to_kes(loan_xlm);
 
@@ -116,9 +112,8 @@ pub async fn handle_sms(
             match user_repo::get_user(pool.get_ref(), &formatted_phone).await {
                 Ok(Some(_)) => {
                     let est_xlm = currency_converter::kes_to_xlm(kes_amount);
-                    let mock_mpesa_ref = format!("MP{}", &form.message_sid.clone().unwrap_or_else(|| "mock_sid".to_string())[0..8].to_uppercase());
+                    let mock_mpesa_ref = format!("MP{}", form.message_sid.clone().unwrap_or_else(|| "mock_sid".to_string())[0..8].to_uppercase());
 
-                    // Log a pending deposit which admin can manually confirm on dashboard
                     let _ = deposit_repo::create_pending_deposit(
                         pool.get_ref(),
                         &mock_mpesa_ref,
@@ -129,7 +124,7 @@ pub async fn handle_sms(
                     ).await;
 
                     format!(
-                        "PesaText Save: Request logged. Please send {:.2} KES to Paybill 545454 with Account number {}. Reference code: {}. Once M-Pesa clears, your XLM will be released.",
+                        "PesaText Save: Request logged. Please send {:.2} KES to Paybill 545454 with Account number {}. Reference code: {}.",
                         kes_amount, formatted_phone, mock_mpesa_ref
                     )
                 }
@@ -153,10 +148,8 @@ pub async fn handle_sms(
                             let requested_xlm = currency_converter::kes_to_xlm(kes_amount);
                             let requested_stroops = currency_converter::xlm_to_stroops(requested_xlm);
 
-                            // Invoke Stellar Client
                             match stellar_client.borrow(&formatted_phone, requested_stroops).await {
                                 Ok(res) => {
-                                    // Save active loan to DB
                                     let calc = loan_service::calculate_loan(requested_stroops.try_into().unwrap_or(i64::MAX));
                                     let new_loan = Loan {
                                         id: None,
@@ -183,8 +176,8 @@ pub async fn handle_sms(
 
                                     let due_kes = currency_converter::xlm_to_kes(currency_converter::stroops_to_xlm(calc.total_due_stroops.into()));
                                     format!(
-                                        "PesaText Loan: Approved! {:.2} KES (~{:.2} XLM) has been credited to your balance. Total due in 30 days: {:.2} KES (5% interest). Ref: {}",
-                                        kes_amount, requested_xlm, due_kes, tx.reference_code
+                                        "PesaText Loan: Approved! {:.2} KES (~{:.2} XLM) credited. Total due in 30 days: {:.2} KES (5% interest).",
+                                        kes_amount, requested_xlm, due_kes
                                     )
                                 }
                                 Err(e) => format!("PesaText Loan: Soroban execution failed ({}).", e),
@@ -205,21 +198,15 @@ pub async fn handle_sms(
                             let repay_xlm = currency_converter::kes_to_xlm(kes_amount);
                             let repay_stroops = currency_converter::xlm_to_stroops(repay_xlm);
 
-                            // Repay from savings balance, check if user has enough savings
                             match stellar_client.get_balance(&formatted_phone).await {
                                 Ok(balance) if balance >= repay_stroops => {
-                                    // Trigger repayment in contract
                                     match stellar_client.repay(&formatted_phone, repay_stroops).await {
                                         Ok(res) => {
                                             let remaining_due_stroops = res.loan_due_stroops;
                                             
-                                            // Update DB
                                             if remaining_due_stroops == 0 {
                                                 let _ = deposit_repo::update_loan_status(pool.get_ref(), active_loan.id.unwrap(), "Repaid").await;
                                             } else {
-                                                // Partially repaid, update loan amounts
-                                                // For simple mock database sync:
-                                                let remaining_xlm = currency_converter::stroops_to_xlm(remaining_due_stroops);
                                                 let _ = sqlx::query("UPDATE loans SET principal_stroops = ? WHERE id = ?")
                                                     .bind(remaining_due_stroops as i64)
                                                     .bind(active_loan.id.unwrap())
@@ -241,8 +228,8 @@ pub async fn handle_sms(
 
                                             let remaining_kes = currency_converter::xlm_to_kes(currency_converter::stroops_to_xlm(remaining_due_stroops));
                                             format!(
-                                                "PesaText Repayment: Repaid {:.2} KES (~{:.2} XLM) from your savings. Outstanding loan due: {:.2} KES. Thank you!",
-                                                kes_amount, repay_xlm, remaining_kes
+                                                "PesaText Repayment: Repaid {:.2} KES from savings. Outstanding loan due: {:.2} KES. Thank you!",
+                                                kes_amount, remaining_kes
                                             )
                                         }
                                         Err(e) => format!("PesaText Repay: Blockchain repayment failed ({}).", e),
@@ -267,7 +254,6 @@ pub async fn handle_sms(
         }
     };
 
-    // Construct Twilio XML response
     let twiml = format!(
         "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Message>{}</Message>\n</Response>",
         reply_msg
@@ -276,8 +262,4 @@ pub async fn handle_sms(
     HttpResponse::Ok()
         .content_type("application/xml")
         .body(twiml)
-}
-
-fn min(a: usize, b: usize) -> usize {
-    if a < b { a } else { b }
 }

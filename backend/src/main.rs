@@ -51,7 +51,7 @@ async fn main() -> std::io::Result<()> {
             
             // Public Webhook Routes (with /api prefix)
             .route("/api/health", web::get().to(handlers::health_handler::health_check))
-            .route("/api/sms", web::post().to(handlers::sms_handler::handle_sms))
+	    .route("/sms", web::post().to(handlers::sms_africastalking::handle_sms))
             
             // Admin Dashboard APIs
             .service(
