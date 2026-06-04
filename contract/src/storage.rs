@@ -3,9 +3,9 @@ use soroban_sdk::{contracttype, Env, String};
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DataKey {
-    Balance(String), // Phone number -> balance
-    User(String),    // Phone number -> Name
-    Loan(String),    // Phone number -> LoanDetails
+    Balance(String),
+    User(String),
+    Loan(String),
 }
 
 #[contracttype]
@@ -16,17 +16,27 @@ pub struct LoanDetails {
     pub timestamp: u64,
 }
 
+// USERS
+
 pub fn has_user(env: &Env, phone: &String) -> bool {
-    env.storage().persistent().has(&DataKey::User(phone.clone()))
+    env.storage()
+        .persistent()
+        .has(&DataKey::User(phone.clone()))
 }
 
 pub fn get_user_name(env: &Env, phone: &String) -> Option<String> {
-    env.storage().persistent().get(&DataKey::User(phone.clone()))
+    env.storage()
+        .persistent()
+        .get(&DataKey::User(phone.clone()))
 }
 
 pub fn set_user(env: &Env, phone: &String, name: &String) {
-    env.storage().persistent().set(&DataKey::User(phone.clone()), name);
+    env.storage()
+        .persistent()
+        .set(&DataKey::User(phone.clone()), name);
 }
+
+// BALANCE
 
 pub fn get_balance(env: &Env, phone: &String) -> i128 {
     env.storage()
@@ -41,14 +51,22 @@ pub fn set_balance(env: &Env, phone: &String, amount: i128) {
         .set(&DataKey::Balance(phone.clone()), &amount);
 }
 
+// LOANS
+
 pub fn get_loan(env: &Env, phone: &String) -> Option<LoanDetails> {
-    env.storage().persistent().get(&DataKey::Loan(phone.clone()))
+    env.storage()
+        .persistent()
+        .get(&DataKey::Loan(phone.clone()))
 }
 
 pub fn set_loan(env: &Env, phone: &String, loan: &LoanDetails) {
-    env.storage().persistent().set(&DataKey::Loan(phone.clone()), loan);
+    env.storage()
+        .persistent()
+        .set(&DataKey::Loan(phone.clone()), loan);
 }
 
 pub fn remove_loan(env: &Env, phone: &String) {
-    env.storage().persistent().remove(&DataKey::Loan(phone.clone()));
+    env.storage()
+        .persistent()
+        .remove(&DataKey::Loan(phone.clone()));
 }
