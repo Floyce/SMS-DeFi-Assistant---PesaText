@@ -1,6 +1,22 @@
 #![cfg(test)]
+
 use super::{PesaTextContract, PesaTextContractClient};
 use soroban_sdk::{testutils::Ledger, Env, String};
+
+fn setup_env() -> Env {
+    let env = Env::default();
+
+    // FIX: deterministic ledger for loan timestamps
+    env.ledger().set(soroban_sdk::testutils::LedgerInfo {
+        timestamp: 1000,
+        protocol_version: 1,
+        sequence_number: 1,
+        network_id: Default::default(),
+        base_reserve: 10,
+    });
+
+    env
+}
 
 fn create_client(env: &Env) -> PesaTextContractClient {
     let contract_id = env.register_contract(None, PesaTextContract);
@@ -9,14 +25,14 @@ fn create_client(env: &Env) -> PesaTextContractClient {
 
 #[test]
 fn test_registration() {
-    let env = Env::default();
+    let env = setup_env();
     let client = create_client(&env);
 
     let phone = String::from_str(&env, "+254712345678");
     let name = String::from_str(&env, "Jane Doe");
 
     client.register(&phone, &name).unwrap();
-    
+
     let balance = client.get_balance(&phone).unwrap();
     assert_eq!(balance, 0);
 
@@ -26,14 +42,14 @@ fn test_registration() {
 
 #[test]
 fn test_deposit() {
-    let env = Env::default();
+    let env = setup_env();
     let client = create_client(&env);
 
     let phone = String::from_str(&env, "+254712345678");
     let name = String::from_str(&env, "Jane Doe");
 
     client.register(&phone, &name).unwrap();
-    
+
     let new_balance = client.deposit(&phone, &1000).unwrap();
     assert_eq!(new_balance, 1000);
 
@@ -43,16 +59,14 @@ fn test_deposit() {
 
 #[test]
 fn test_borrow() {
-    let env = Env::default();
+    let env = setup_env();
     let client = create_client(&env);
 
     let phone = String::from_str(&env, "+254712345678");
     let name = String::from_str(&env, "Jane Doe");
 
     client.register(&phone, &name).unwrap();
-    
-    // Borrow 100 XLM (represented as 100)
-    // Borrowing credits 100 to balance and returns total due: 100 + 5% = 105
+
     let total_due = client.borrow(&phone, &100).unwrap();
     assert_eq!(total_due, 105);
 
@@ -66,17 +80,15 @@ fn test_borrow() {
 
 #[test]
 fn test_repayment_full() {
-    let env = Env::default();
+    let env = setup_env();
     let client = create_client(&env);
 
     let phone = String::from_str(&env, "+254712345678");
     let name = String::from_str(&env, "Jane Doe");
 
     client.register(&phone, &name).unwrap();
-    client.borrow(&phone, &100).unwrap(); // balance=100, loan due=105
+    client.borrow(&phone, &100).unwrap();
 
-    // Repay 110 (which is more than 105)
-    // Outstanding loan should become 0, and remaining 5 XLM goes to savings
     let remaining_due = client.repay(&phone, &110).unwrap();
     assert_eq!(remaining_due, 0);
 
@@ -84,23 +96,20 @@ fn test_repayment_full() {
     assert!(loan.is_none());
 
     let balance = client.get_balance(&phone).unwrap();
-    // Start balance 100 + 5 excess = 105
     assert_eq!(balance, 105);
 }
 
 #[test]
 fn test_repayment_partial() {
-    let env = Env::default();
+    let env = setup_env();
     let client = create_client(&env);
 
     let phone = String::from_str(&env, "+254712345678");
     let name = String::from_str(&env, "Jane Doe");
 
     client.register(&phone, &name).unwrap();
-    client.borrow(&phone, &100).unwrap(); // balance=100, loan due=105
+    client.borrow(&phone, &100).unwrap();
 
-    // Repay 50 (first covers 5 interest, then 45 principal)
-    // Remaining due should be 105 - 50 = 55 (55 principal, 0 interest)
     let remaining_due = client.repay(&phone, &50).unwrap();
     assert_eq!(remaining_due, 55);
 
