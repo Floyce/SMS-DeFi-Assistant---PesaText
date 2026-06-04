@@ -3,7 +3,8 @@
 //! Description: Entry point for Actix web server
 //! Author: Floyce
 //! Created: 2026-06-03
-//! Last Modified: 2026-06-03
+//! Last Modified: 2026-06-04
+
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use log::info;
@@ -18,7 +19,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    let settings = Settings::new();
+    let settings = Settings::from_env();
     info!("PesaText Server booting up...");
     info!("Database URL: {}", settings.database_url);
     info!("Soroban Contract ID: {}", settings.soroban_contract_id);
@@ -29,7 +30,7 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to initialize database and run schema migrations");
 
     let server_settings = settings.clone();
-    let port = server_settings.server_port;
+    let port = server_settings.port;
 
     info!("Starting HTTP server on port {}...", port);
 
@@ -45,7 +46,10 @@ async fn main() -> std::io::Result<()> {
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(server_settings.clone()))
             
-            // Public Webhook Routes
+            // Direct Twilio webhook route (no /api prefix)
+            .route("/sms", web::post().to(handlers::sms_handler::handle_sms))
+            
+            // Public Webhook Routes (with /api prefix)
             .route("/api/health", web::get().to(handlers::health_handler::health_check))
             .route("/api/sms", web::post().to(handlers::sms_handler::handle_sms))
             
