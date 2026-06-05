@@ -67,7 +67,7 @@ SMS-DeFi-Assistant---PesaText/
 |------|---------|
 | Rust + Actix-web 4 | HTTP server framework |
 | SQLx + SQLite | Async database queries |
-| Twilio | SMS gateway webhook handling |
+| Africa's Talking | SMS gateway webhook handling |
 | Serde | JSON serialization |
 | Chrono | Date and time handling |
 | Tracing | Structured logging |
@@ -81,7 +81,7 @@ SMS-DeFi-Assistant---PesaText/
 ```bash
 cd backend
 cp .env.example .env
-# Edit .env with your Twilio credentials
+# Edit .env with your Africa's Talking sandbox credentials
 cargo run
 ```
 
@@ -103,7 +103,7 @@ Open `http://localhost:5173`.
 
 ## SMS Commands
 
-Users send these SMS messages to the PesaText Twilio number:
+Users send these SMS messages to the PesaText Africa's Talking sandbox number:
 
 | Command | Description |
 |---------|-------------|
@@ -122,7 +122,7 @@ Users send these SMS messages to the PesaText Twilio number:
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/api/health` | Health check |
-| POST | `/api/sms` | Twilio SMS webhook |
+| GET | `/api/sms` | Africa's Talking SMS webhook |
 
 ### Admin Dashboard
 | Method | Path | Description |
@@ -144,9 +144,9 @@ The backend is configured for [Railway](https://railway.app) via `backend/railwa
 
 Set these environment variables in Railway:
 - `DATABASE_URL`
-- `TWILIO_ACCOUNT_SID`
-- `TWILIO_AUTH_TOKEN`
-- `TWILIO_NUMBER`
+- `AFRICAS_TALKING_API_KEY`
+- `AFRICAS_TALKING_USERNAME`
+- `AFRICAS_TALKING_SHORTCODE`
 - `SOROBAN_CONTRACT_ID`
 - `STELLAR_RPC_URL`
 
