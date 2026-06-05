@@ -1,9 +1,12 @@
 services:
   - type: web
     name: pesatext-backend
-    runtime: image
+    runtime: rust
     repo: https://github.com/Floyce/SMS-DeFi-Assistant---PesaText
     plan: free
+    rootDir: backend
+    buildCommand: cargo build --release
+    startCommand: ./target/release/pesatext_backend
     envVars:
       - key: PORT
         value: 8000
@@ -19,5 +22,3 @@ services:
         value: CDIMDNUZHI2M3WHYB4CF2ND6O2OLPUKRTNYJ5QHX7AER7TBBHLGDGIV5
       - key: STELLAR_RPC_URL
         value: https://soroban-testnet.stellar.org
-    buildCommand: cd backend && cargo build --release
-    startCommand: cd backend && ./target/release/pesatext_backend
