@@ -3,7 +3,10 @@
 //! Description: Handle Africa's Talking SMS webhooks and execute commands
 //! Author: Floyce
 //! Created: 2026-06-03
+backend/africas-talking-sms
 //! Last Modified: 2026-06-05
+//! Last Modified: 2026-06-04
+ main
 
 use actix_web::{web, HttpResponse, Responder};
 use chrono::Local;
@@ -66,6 +69,7 @@ pub async fn handle_sms(
                 }
 
                 Ok(None) => {
+ backend/africas-talking-sms
                     match stellar_client
                         .register(&formatted_phone, &name)
                         .await
@@ -76,6 +80,13 @@ pub async fn handle_sms(
                                 &res.tx_hash[0
                                     ..std::cmp::min(55, res.tx_hash.len())]
                                     .to_uppercase(),
+
+                    match stellar_client.register(&formatted_phone, &name).await {
+                        Ok(res) => {
+                            let stellar_address = format!(
+                                "G{}",
+                                &res.tx_hash[0..std::cmp::min(55, res.tx_hash.len())].to_uppercase()
+ main
                             );
 
                             let new_user = User {
@@ -116,8 +127,13 @@ pub async fn handle_sms(
 
                         Err(e) => {
                             format!(
+ backend/africas-talking-sms
                                 "PesaText: Blockchain registration failed ({}).",
                                 e
+
+                                "PesaText: Registration successful! Welcome, {}. Your Stellar wallet has been created. Send HELP to see options.",
+                                name
+main
                             )
                         }
                     }
@@ -140,6 +156,7 @@ pub async fn handle_sms(
 
                     match (bal_res, loan_res) {
                         (Ok(bal_stroops), Ok(loan_stroops)) => {
+ backend/africas-talking-sms
                             let bal_xlm =
                                 currency_converter::stroops_to_xlm(
                                     bal_stroops,
@@ -155,6 +172,12 @@ pub async fn handle_sms(
 
                             let loan_kes =
                                 currency_converter::xlm_to_kes(loan_xlm);
+
+                            let bal_xlm = currency_converter::stroops_to_xlm(bal_stroops);
+                            let loan_xlm = currency_converter::stroops_to_xlm(loan_stroops);
+                            let bal_kes = currency_converter::xlm_to_kes(bal_xlm);
+                            let loan_kes = currency_converter::xlm_to_kes(loan_xlm);
+ main
 
                             format!(
                                 "PesaText Balance:\nSavings: {:.2} XLM (~{:.2} KES)\nActive Loan Due: {:.2} XLM (~{:.2} KES)",
@@ -186,6 +209,7 @@ pub async fn handle_sms(
         SmsCommand::Save(kes_amount) => {
             match user_repo::get_user(pool.get_ref(), &formatted_phone).await {
                 Ok(Some(_)) => {
+ backend/africas-talking-sms
                     let est_xlm =
                         currency_converter::kes_to_xlm(kes_amount);
 
@@ -197,6 +221,10 @@ pub async fn handle_sms(
 
                     let mock_mpesa_ref =
                         format!("MP{}", reference_code);
+
+                    let est_xlm = currency_converter::kes_to_xlm(kes_amount);
+                    let mock_mpesa_ref = format!("MP{}", form.message_sid.clone().unwrap_or_else(|| "mock_sid".to_string())[0..8].to_uppercase());
+ main
 
                     let _ = deposit_repo::create_pending_deposit(
                         pool.get_ref(),
@@ -210,9 +238,13 @@ pub async fn handle_sms(
 
                     format!(
                         "PesaText Save: Request logged. Please send {:.2} KES to Paybill 545454 with Account number {}. Reference code: {}.",
+ backend/africas-talking-sms
                         kes_amount,
                         formatted_phone,
                         mock_mpesa_ref,
+
+                        kes_amount, formatted_phone, mock_mpesa_ref
+ main
                     )
                 }
 
@@ -262,6 +294,7 @@ pub async fn handle_sms(
                                     kes_amount,
                                 );
 
+ backend/africas-talking-sms
                             let requested_stroops =
                                 currency_converter::xlm_to_stroops(
                                     requested_xlm,
@@ -282,6 +315,11 @@ pub async fn handle_sms(
                                                 .unwrap_or(i64::MAX),
                                         );
 
+
+                            match stellar_client.borrow(&formatted_phone, requested_stroops).await {
+                                Ok(res) => {
+                                    let calc = loan_service::calculate_loan(requested_stroops.try_into().unwrap_or(i64::MAX));
+main
                                     let new_loan = Loan {
                                         id: None,
                                         user_phone:
@@ -339,8 +377,13 @@ pub async fn handle_sms(
 
                                 Err(e) => {
                                     format!(
+ backend/africas-talking-sms
                                         "PesaText Loan: Soroban execution failed ({}).",
                                         e
+
+                                        "PesaText Loan: Approved! {:.2} KES (~{:.2} XLM) credited. Total due in 30 days: {:.2} KES (5% interest).",
+                                        kes_amount, requested_xlm, due_kes
+ main
                                     )
                                 }
                             }
@@ -374,6 +417,7 @@ pub async fn handle_sms(
                     .await
                     {
                         Ok(Some(active_loan)) => {
+ backend/africas-talking-sms
                             let repay_xlm =
                                 currency_converter::kes_to_xlm(
                                     kes_amount,
@@ -409,6 +453,23 @@ pub async fn handle_sms(
                                                         active_loan.id.unwrap(),
                                                         "Repaid",
                                                     )
+                            let repay_xlm = currency_converter::kes_to_xlm(kes_amount);
+                            let repay_stroops = currency_converter::xlm_to_stroops(repay_xlm);
+
+                            match stellar_client.get_balance(&formatted_phone).await {
+                                Ok(balance) if balance >= repay_stroops => {
+                                    match stellar_client.repay(&formatted_phone, repay_stroops).await {
+                                        Ok(res) => {
+                                            let remaining_due_stroops = res.loan_due_stroops;
+                                            
+                                            if remaining_due_stroops == 0 {
+                                                let _ = deposit_repo::update_loan_status(pool.get_ref(), active_loan.id.unwrap(), "Repaid").await;
+                                            } else {
+                                                let _ = sqlx::query("UPDATE loans SET principal_stroops = ? WHERE id = ?")
+                                                    .bind(remaining_due_stroops as i64)
+                                                    .bind(active_loan.id.unwrap())
+                                                    .execute(pool.get_ref())
+ main
                                                     .await;
                                             }
 
@@ -453,8 +514,13 @@ pub async fn handle_sms(
 
                                         Err(e) => {
                                             format!(
+ backend/africas-talking-sms
                                                 "PesaText Repay: Blockchain repayment failed ({}).",
                                                 e
+
+                                                "PesaText Repayment: Repaid {:.2} KES from savings. Outstanding loan due: {:.2} KES. Thank you!",
+                                                kes_amount, remaining_kes
+ main
                                             )
                                         }
                                     }
@@ -502,6 +568,7 @@ pub async fn handle_sms(
         }
     };
 
+ backend/africas-talking-sms
     info!("Sending SMS reply: {}", reply_msg);
 
     let _ = africas_talking.send_sms(&formatted_phone, &reply_msg).await;
@@ -511,3 +578,13 @@ pub async fn handle_sms(
         "message": reply_msg,
     }))
 }
+
+    let twiml = format!(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Response>\n    <Message>{}</Message>\n</Response>",
+        reply_msg
+    );
+
+    HttpResponse::Ok()
+        .content_type("application/xml")
+        .body(twiml)
+} main

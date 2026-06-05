@@ -48,6 +48,7 @@ async fn main() -> std::io::Result<()> {
             // Africa's Talking webhook route (no /api prefix)
             .route("/sms", web::post().to(handlers::sms_handler::handle_sms))
             // Public Webhook Routes (with /api prefix)
+ backend/africas-talking-sms
             .route(
                 "/api/health",
                 web::get().to(handlers::health_handler::health_check),
@@ -56,6 +57,11 @@ async fn main() -> std::io::Result<()> {
                 "/api/sms",
                 web::post().to(handlers::sms_handler::handle_sms),
             )
+
+            .route("/api/health", web::get().to(handlers::health_handler::health_check))
+	    .route("/sms", web::post().to(handlers::sms_africastalking::handle_sms))
+            
+ main
             // Admin Dashboard APIs
             .service(
                 web::scope("/api/admin")

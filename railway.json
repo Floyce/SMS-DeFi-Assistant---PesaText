@@ -1,12 +1,10 @@
 {
   "build": {
-    "builder": "NIXPACKS",
-    "buildCommand": "cd backend && cargo build --release"
+    "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "cd backend && ./target/release/pesatext_backend",
+    "startCommand": "cd backend && cargo run --release",
     "healthcheckPath": "/api/health",
-    "healthcheckTimeout": 100,
     "restartPolicyType": "ON_FAILURE"
   }
 }
