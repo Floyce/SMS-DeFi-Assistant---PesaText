@@ -6,7 +6,7 @@ This is the Rust backend for **PesaText** — a DeFi assistant bridging SMS-base
 
 - **Web Server**: Actix-web
 - **Database**: SQLite with SQLx (async queries and migrations)
-- **SMS Gateway**: Twilio Webhook parsing SMS commands
+- **SMS Gateway**: Africa's Talking sandbox webhook parsing SMS commands
 - **Blockchain Interface**: Stellar client invoking mock/live Soroban smart contracts
 
 ## Tech Stack & Dependencies
@@ -25,9 +25,9 @@ Create a `.env` file in the root of the `backend/` directory:
 ```env
 PORT=8000
 DATABASE_URL=sqlite://pesatext.db
-TWILIO_ACCOUNT_SID=your_twilio_account_sid
-TWILIO_AUTH_TOKEN=your_twilio_auth_token
-TWILIO_NUMBER=your_twilio_phone_number
+AFRICAS_TALKING_API_KEY=your_api_key_here
+AFRICAS_TALKING_USERNAME=your_username_here
+AFRICAS_TALKING_SHORTCODE=your_shortcode_here
 SOROBAN_CONTRACT_ID=your_soroban_contract_id
 STELLAR_RPC_URL=https://soroban-testnet.stellar.org
 ```
@@ -46,7 +46,7 @@ The server binds to `0.0.0.0:8000` (configurable via `PORT` env var).
 
 ### Public / Webhook Endpoints
 - `GET /api/health` - Health check
-- `POST /api/sms` - Twilio SMS Webhook receiver
+- `POST /api/sms` - Africa's Talking SMS webhook receiver
 
 ### Admin APIs (`/api/admin/...`)
 - `GET /api/admin/stats` - Retrieve dashboard stats

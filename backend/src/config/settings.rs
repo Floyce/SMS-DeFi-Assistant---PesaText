@@ -11,9 +11,9 @@ use std::env;
 #[derive(Clone, Debug)]
 pub struct Settings {
     pub database_url: String,
-    pub twilio_account_sid: String,
-    pub twilio_auth_token: String,
-    pub twilio_number: String,
+    pub africas_talking_api_key: String,
+    pub africas_talking_username: String,
+    pub africas_talking_shortcode: String,
     pub soroban_contract_id: String,
     pub stellar_rpc_url: String,
     pub server_port: u16,
@@ -27,12 +27,12 @@ impl Settings {
         Settings {
             database_url: env::var("DATABASE_URL")
                 .unwrap_or_else(|_| "sqlite://pesatext.db".to_string()),
-            twilio_account_sid: env::var("TWILIO_ACCOUNT_SID")
-                .unwrap_or_else(|_| "ACmock_account_sid_placeholder".to_string()),
-            twilio_auth_token: env::var("TWILIO_AUTH_TOKEN")
-                .unwrap_or_else(|_| "mock_auth_token_placeholder".to_string()),
-            twilio_number: env::var("TWILIO_NUMBER")
-                .unwrap_or_else(|_| "+15005550006".to_string()),
+            africas_talking_api_key: env::var("AFRICAS_TALKING_API_KEY")
+                .unwrap_or_else(|_| "mock_api_key_placeholder".to_string()),
+            africas_talking_username: env::var("AFRICAS_TALKING_USERNAME")
+                .unwrap_or_else(|_| "sandbox".to_string()),
+            africas_talking_shortcode: env::var("AFRICAS_TALKING_SHORTCODE")
+                .unwrap_or_else(|_| "your_shortcode_here".to_string()),
             soroban_contract_id: env::var("SOROBAN_CONTRACT_ID")
                 .unwrap_or_else(|_| "CA3D27JOCYEL4EASYYMOCKCONTRACTID".to_string()),
             stellar_rpc_url: env::var("STELLAR_RPC_URL")
