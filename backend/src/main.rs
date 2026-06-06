@@ -40,19 +40,20 @@ async fn main() -> std::io::Result<()> {
             .allow_any_header()
             .max_age(3600);
 
-        App::new()
-            .wrap(cors)
-            .app_data(web::Data::new(pool.clone()))
-            .app_data(web::Data::new(server_settings.clone()))
-            // Public Webhook Routes
-            .route(
-                "/api/health",
-                web::get().to(handlers::health_handler::health_check),
-            )
-            .route(
-                "/api/sms",
-                web::post().to(handlers::sms_handler::handle_sms),
-            )
+       App::new()
+    .wrap(cors)
+    .app_data(web::Data::new(pool.clone()))
+    .app_data(web::Data::new(server_settings.clone()))
+    // Public Webhook Routes
+    .route(
+        "/",
+        web::get().to(handlers::health_handler::health_check),
+    )
+    .route(
+        "/api/health",
+        web::get().to(handlers::health_handler::health_check),
+    )
+
             // Admin Dashboard APIs
             .service(
                 web::scope("/api/admin")
