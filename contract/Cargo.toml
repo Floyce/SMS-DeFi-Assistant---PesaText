@@ -2,18 +2,22 @@
 name = "pesatext_contract"
 version = "0.1.0"
 edition = "2021"
-authors = ["Floyce", "Amir"]
 
 [lib]
-crate-type = ["cdylib", "rlib"]
+crate-type = ["cdylib"]
 
 [dependencies]
-soroban-sdk = "20.0.0"
+soroban-sdk = "26.0.1"
+
+[dev-dependencies]
+soroban-sdk = { version = "26.0.1", features = ["testutils"] }
 
 [profile.release]
 opt-level = "z"
 overflow-checks = true
-debug = false
+debug = 0
+strip = "symbols"
+debug-assertions = false
 panic = "abort"
-lto = true
 codegen-units = 1
+lto = true
