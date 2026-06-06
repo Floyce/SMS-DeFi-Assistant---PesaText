@@ -1,15 +1,14 @@
-use sqlx::sqlite::{SqliteConnectOptions, SqlitePool};
+use sqlx::postgres::{PgConnectOptions, PgPool};
 use std::str::FromStr;
 
-pub type DbPool = SqlitePool;
+pub type DbPool = PgPool;
 
 pub async fn establish_connection(database_url: &str) -> Result<DbPool, sqlx::Error> {
-    let connection_options = SqliteConnectOptions::from_str(database_url)?
-        .create_if_missing(true);
+    let connection_options = PgConnectOptions::from_str(database_url)?;
 
-    let pool = SqlitePool::connect_with(connection_options).await?;
+    let pool = PgPool::connect_with(connection_options).await?;
 
-    // Run simple schema migration
+    // Create users table
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS users (
             phone TEXT PRIMARY KEY,
@@ -21,12 +20,13 @@ pub async fn establish_connection(database_url: &str) -> Result<DbPool, sqlx::Er
     .execute(&pool)
     .await?;
 
+    // Create loans table using PostgreSQL SERIAL identity keys
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS loans (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_phone TEXT NOT NULL,
-            principal_stroops INTEGER NOT NULL,
-            interest_stroops INTEGER NOT NULL,
+            principal_stroops BIGINT NOT NULL,
+            interest_stroops BIGINT NOT NULL,
             status TEXT NOT NULL,
             issued_at TEXT NOT NULL,
             due_at TEXT NOT NULL,
@@ -36,12 +36,13 @@ pub async fn establish_connection(database_url: &str) -> Result<DbPool, sqlx::Er
     .execute(&pool)
     .await?;
 
+    // Create transactions table using PostgreSQL SERIAL identity keys
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS transactions (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             user_phone TEXT NOT NULL,
             tx_type TEXT NOT NULL,
-            amount_stroops INTEGER NOT NULL,
+            amount_stroops BIGINT NOT NULL,
             status TEXT NOT NULL,
             reference_code TEXT NOT NULL,
             created_at TEXT NOT NULL,
@@ -51,13 +52,14 @@ pub async fn establish_connection(database_url: &str) -> Result<DbPool, sqlx::Er
     .execute(&pool)
     .await?;
 
+    // Create pending_deposits table using PostgreSQL SERIAL identity keys
     sqlx::query(
         "CREATE TABLE IF NOT EXISTS pending_deposits (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            id SERIAL PRIMARY KEY,
             reference_code TEXT UNIQUE NOT NULL,
             phone TEXT NOT NULL,
-            amount_kes REAL NOT NULL,
-            est_xlm REAL NOT NULL,
+            amount_kes DOUBLE PRECISION NOT NULL,
+            est_xlm DOUBLE PRECISION NOT NULL,
             created_at TEXT NOT NULL
         );"
     )
