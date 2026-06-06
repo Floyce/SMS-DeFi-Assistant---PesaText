@@ -1,5 +1,5 @@
 //! PesaText - Backend Tests
-//! 
+//!
 //! File: tests/test_db.rs
 //! Description: Integration tests for database CRUD operations
 //! Author: Floyce
@@ -7,15 +7,15 @@
 //! Last Modified: 2026-06-03
 
 use pesatext_backend::db::connection::establish_connection;
-use pesatext_backend::db::{user_repo, deposit_repo};
-use pesatext_backend::models::user::User;
+use pesatext_backend::db::{deposit_repo, user_repo};
 use pesatext_backend::models::loan::Loan;
 use pesatext_backend::models::transaction::Transaction;
+use pesatext_backend::models::user::User;
 
 #[tokio::test]
 async fn test_db_user_crud() {
     let pool = establish_connection("sqlite::memory:").await.unwrap();
-    
+
     let new_user = User {
         id: None,
         phone: "+254712345678".to_string(),
@@ -28,7 +28,10 @@ async fn test_db_user_crud() {
     user_repo::create_user(&pool, &new_user).await.unwrap();
 
     // Get
-    let fetched = user_repo::get_user(&pool, "+254712345678").await.unwrap().unwrap();
+    let fetched = user_repo::get_user(&pool, "+254712345678")
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(fetched.name, "Test User");
     assert_eq!(fetched.phone, "+254712345678");
 
@@ -37,7 +40,9 @@ async fn test_db_user_crud() {
     assert_eq!(users.len(), 1);
 
     // Delete
-    user_repo::delete_user(&pool, "+254712345678").await.unwrap();
+    user_repo::delete_user(&pool, "+254712345678")
+        .await
+        .unwrap();
     let fetched_after = user_repo::get_user(&pool, "+254712345678").await.unwrap();
     assert!(fetched_after.is_none());
 }
@@ -45,7 +50,7 @@ async fn test_db_user_crud() {
 #[tokio::test]
 async fn test_db_transaction_crud() {
     let pool = establish_connection("sqlite::memory:").await.unwrap();
-    
+
     let tx = Transaction {
         id: None,
         user_phone: "+254712345678".to_string(),
@@ -66,7 +71,7 @@ async fn test_db_transaction_crud() {
 #[tokio::test]
 async fn test_db_loan_crud() {
     let pool = establish_connection("sqlite::memory:").await.unwrap();
-    
+
     let loan = Loan {
         id: None,
         user_phone: "+254712345678".to_string(),
@@ -79,7 +84,10 @@ async fn test_db_loan_crud() {
 
     deposit_repo::create_loan(&pool, &loan).await.unwrap();
 
-    let active = deposit_repo::get_active_loan(&pool, "+254712345678").await.unwrap().unwrap();
+    let active = deposit_repo::get_active_loan(&pool, "+254712345678")
+        .await
+        .unwrap()
+        .unwrap();
     assert_eq!(active.principal_stroops, 500000000);
     assert_eq!(active.status, "Active");
 }
