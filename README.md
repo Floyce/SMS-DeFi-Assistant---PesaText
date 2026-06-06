@@ -116,6 +116,10 @@ Users send these SMS messages to the PesaText Africa's Talking sandbox number:
 
 ---
 
+##Complete User Flow Diagram
+
+web application/stitch/projects/16068510862007188066/screens/6b111fcbc87148aa9446f5d75fd940ed
+
 ## API Endpoints
 
 ### Public
