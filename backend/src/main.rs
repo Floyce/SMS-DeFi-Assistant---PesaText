@@ -8,6 +8,7 @@
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
 use log::info;
+use std::env;
 
 use pesatext_backend::config::Settings;
 use pesatext_backend::db::connection::establish_connection;
@@ -30,7 +31,12 @@ async fn main() -> std::io::Result<()> {
         .expect("Failed to initialize database and run schema migrations");
 
     let server_settings = settings.clone();
-    let port = server_settings.port;
+    
+    // Get port from environment variable, default to 8000
+    let port: u16 = env::var("PORT")
+        .unwrap_or_else(|_| "8000".to_string())
+        .parse()
+        .expect("PORT must be a number");
 
     info!("Starting HTTP server on port {}...", port);
 
@@ -45,11 +51,9 @@ async fn main() -> std::io::Result<()> {
             .wrap(cors)
             .app_data(web::Data::new(pool.clone()))
             .app_data(web::Data::new(server_settings.clone()))
-            // Public Webhook Routes
             .route("/", web::get().to(handlers::health_handler::health_check))
             .route("/api/health", web::get().to(handlers::health_handler::health_check))
             .route("/sms", web::post().to(handlers::sms_handler::handle_sms))
-            // Admin Dashboard APIs
             .service(
                 web::scope("/api/admin")
                     .route("/stats", web::get().to(handlers::admin_handler::get_stats))
