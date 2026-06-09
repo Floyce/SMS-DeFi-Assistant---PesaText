@@ -3,7 +3,7 @@
 //! Description: Entry point for Actix web server
 //! Author: Floyce
 //! Created: 2026-06-03
-//! Last Modified: 2026-06-05
+//! Last Modified: 2026-06-09
 
 use actix_cors::Cors;
 use actix_web::{web, App, HttpServer};
@@ -19,7 +19,7 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "info");
     env_logger::init();
 
-    let settings = Settings::from_env();
+    let settings = Settings::new();
     info!("PesaText Server booting up...");
     info!("Database URL: {}", settings.database_url);
     info!("Soroban Contract ID: {}", settings.soroban_contract_id);
