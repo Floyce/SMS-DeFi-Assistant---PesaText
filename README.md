@@ -120,7 +120,16 @@ Users send these SMS messages to the PesaText Africa's Talking sandbox number:
 
 ![Uploading Complete User Flow.png…]()
 
+## Contributors
+| Name | Role | Conribution |
+|--------|------|-------------|
+| Floyce Shitandi| Lead Developer | Smart contract architecture, backend development, deployment, frontend dashboard|
+| Erick Okello | Blockchain Developer| Soroban contract implementation, test suite, contract optimization|
 
+## Acknowledgements
+
+- Jones for contributions to the Stellar client auto-recovery logic
+  
 ## API Endpoints
 
 ### Public
